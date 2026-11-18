@@ -508,7 +508,7 @@ async function exportIssuesCsv(request: Request, access: Access) {
   const content = serializeCsv([issueCsvHeaders, ...csvRows]);
   return new Response(content, { headers: {
     "Content-Type": "text/csv; charset=utf-8",
-    "Content-Disposition": 'attachment; filename="linear-issues.csv"',
+    "Content-Disposition": 'attachment; filename="issuedesk-issues.csv"',
     "Cache-Control": "private, no-store, max-age=0",
     "X-Content-Type-Options": "nosniff",
   } });

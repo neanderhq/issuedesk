@@ -19,7 +19,7 @@ def get(route):
 
 
 status, mime, body = get("/")
-assert status == 200 and "text/html" in mime and b"Linear" in body
+assert status == 200 and "text/html" in mime and b"IssueDesk" in body
 asset = re.search(rb'src="([^"?]+\.js(?:\?[^" ]*)?)"', body)
 assert asset, "The HTML must reference a production JS asset"
 asset_status, asset_mime, _ = get(asset[1].decode())
