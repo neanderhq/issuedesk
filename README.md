@@ -1,7 +1,7 @@
-# Linear Template — IssueDesk
+# Issue Tracker — IssueDesk
 
 IssueDesk is a Linear-style team issue tracker built by Ibrahim on Neander.
-The template library calls it **Linear Template**; the app itself uses **IssueDesk**.
+The template library calls it **Issue Tracker**; the app itself uses **IssueDesk**.
 Includes boards,
 lists, projects, milestones, cycles, issue dependencies, comments and team roles.
 
