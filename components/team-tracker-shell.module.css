@@ -1,0 +1,7 @@
+.shell {
+  display: contents;
+}
+
+.shell :global(.at-workspace-rail__primary .at-nav-row:has(svg.lucide-zap)) {
+  display: none;
+}
