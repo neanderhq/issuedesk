@@ -2,7 +2,9 @@
 
 A team issue tracker for planning work across boards, projects and cycles.
 
-**Neander library:** Issue Tracker · **Category:** Project Management
+**Product inspiration:** Linear-inspired issue tracking and project planning, with its own IssueDesk branding.
+
+**Neander library:** IssueDesk · **Category:** Project Management
 
 ![IssueDesk with fictional sample data](.neander/thumbnail.png)
 
@@ -16,7 +18,7 @@ A team issue tracker for planning work across boards, projects and cycles.
 
 ## How this fits into Neander
 
-This is the open-source app behind Neander’s **Issue Tracker** starter. You can
+This is the open-source app behind Neander’s **IssueDesk** starter. You can
 run and modify it on its own without a Neander account, or use it as a starting
 point in Neander.
 
@@ -42,8 +44,8 @@ PostgreSQL service. Python 3.12 with PyYAML is needed for this repository’s Py
 ### 1. Install the app
 
 ```sh
-git clone https://github.com/neanderhq/linear-template.git
-cd linear-template
+git clone https://github.com/neanderhq/issuedesk.git
+cd issuedesk
 pnpm install --frozen-lockfile
 cp .env.example .env.local
 ```
