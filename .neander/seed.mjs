@@ -23,7 +23,7 @@ export async function seed({ databaseUrl, password }) {
     const passwordHash = await hashPassword(password);
     await client.query('INSERT INTO "user" (id,name,email,email_verified) VALUES ($1,$2,$3,true)', [DEMO_OWNER_ID, 'Maya Chen', DEMO_EMAIL]);
     await client.query('INSERT INTO account (id,account_id,provider_id,user_id,password,created_at,updated_at) VALUES ($1,$2,$3,$2,$4,NOW(),NOW())', ['template-linear-credential', DEMO_OWNER_ID, 'credential', passwordHash]);
-    await client.query('INSERT INTO workspaces (id,name,issue_key_prefix) VALUES ($1,$2,$3)', [WORKSPACE_ID, 'Linear', 'LIN']);
+    await client.query('INSERT INTO workspaces (id,name,issue_key_prefix) VALUES ($1,$2,$3)', [WORKSPACE_ID, 'IssueDesk', 'ID']);
     await client.query("INSERT INTO memberships (workspace_id,user_id,role,active) VALUES ($1,$2,'Admin',true)", [WORKSPACE_ID, DEMO_OWNER_ID]);
     await seedProductLaunch(client, WORKSPACE_ID, DEMO_OWNER_ID);
     await client.query('COMMIT');
@@ -38,5 +38,5 @@ export async function seed({ databaseUrl, password }) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = await seed({ databaseUrl: process.env.DATABASE_URL, password: process.env.DEMO_OWNER_PASSWORD });
-  console.log(result.created ? 'Fictional Linear workspace initialized.' : 'Linear already initialized; existing data preserved.');
+  console.log(result.created ? 'Fictional IssueDesk workspace initialized.' : 'IssueDesk already initialized; existing data preserved.');
 }

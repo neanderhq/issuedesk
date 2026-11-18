@@ -1,6 +1,6 @@
 contract_version: 1
 id: linear
-title: Linear
+title: Linear Template
 description: Track team issues with boards, projects, cycles, priorities, dependencies and comments.
 category: Business & Productivity
 best_for: Product and engineering teams planning their work
