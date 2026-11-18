@@ -98,7 +98,7 @@ export function AuthForm({ mode, token, expired = false, sessionEnded = false, n
   return <main className="flex min-h-dvh items-center justify-center overflow-x-hidden bg-background px-4 py-8 text-foreground">
     <Card className="w-full max-w-md gap-5">
       <CardHeader className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Team Tracker</p>
+        <p className="text-sm font-medium text-muted-foreground">Linear</p>
         <CardTitle className="text-2xl">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>

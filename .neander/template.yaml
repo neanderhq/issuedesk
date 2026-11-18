@@ -1,0 +1,16 @@
+contract_version: 1
+id: linear
+title: Linear
+description: Track team issues with boards, projects, cycles, priorities, dependencies and comments.
+category: Business & Productivity
+best_for: Product and engineering teams planning their work
+features: [Issue boards and lists, Projects and milestones, Cycles, Sub-issues and dependencies, Comments and notifications, Team roles]
+included: [Issue tracking application, PostgreSQL migrations, Fictional Product Launch project]
+thumbnail: .neander/thumbnail.png
+commands:
+  install: [pnpm, install, --frozen-lockfile]
+  check: [pnpm, run, check]
+  test: [pnpm, run, test]
+  verify: [pnpm, run, test:template]
+seed:
+  command: [pnpm, run, db:seed]

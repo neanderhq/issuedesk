@@ -1,6 +1,7 @@
 allowBuilds:
   '@embedded-postgres/darwin-arm64': true
   '@embedded-postgres/linux-x64': true
+  '@embedded-postgres/linux-arm64': true
   esbuild: true
 overrides:
   '@esbuild-kit/core-utils>esbuild': 0.25.12

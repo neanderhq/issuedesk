@@ -12,10 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DeploymentExamplesTests(unittest.TestCase):
-    def test_base_stays_database_free(self):
+    def test_application_recipe_declares_its_runtime(self):
         metadata = yaml.safe_load((ROOT / '.neander/compose.yaml').read_text())['x-neander']
-        self.assertEqual(metadata['environment'], [])
-        self.assertNotIn('migration', metadata)
+        self.assertEqual(metadata['migration'], 'nextjs-drizzle')
+        requirements = {item['name']: item for item in metadata['environment']}
+        self.assertEqual(requirements['DATABASE_URL']['provider'], 'Neon')
+        self.assertEqual(requirements['BETTER_AUTH_URL']['binding'], 'public_origin')
+        self.assertEqual(requirements['DEMO_OWNER_PASSWORD']['generator'], 'opaque-random')
+        self.assertEqual(metadata['ingress']['root_probe'], '/api/health')
 
     def test_database_and_auth_recipes_declare_complete_requirements(self):
         examples = list((ROOT / '.neander/blocks').glob('*/.neander/compose.yaml.example'))
