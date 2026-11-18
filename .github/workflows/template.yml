@@ -1,20 +1,30 @@
-name: Template
+name: App checks
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
-  id-token: write
 jobs:
-  template:
-    uses: neanderhq/neander_backend/.github/workflows/template-contract.yml@2f77fb5577be4cddd3fc9956826287ec4cc39d46
-    with:
-      node_version: "24.22.3"
-      test_database_profile: postgres
-      gcp_workload_identity_provider: ${{ vars.TEMPLATE_GCP_WIF_PROVIDER }}
-      gcp_service_account: ${{ vars.TEMPLATE_GCP_SERVICE_ACCOUNT }}
-      image_repository: ${{ vars.TEMPLATE_IMAGE_REPOSITORY }}
-      artifact_bucket: ${{ vars.TEMPLATE_ARTIFACT_BUCKET }}
-      assets_base_url: ${{ vars.TEMPLATE_ASSETS_BASE_URL }}
-      assets_bucket: ${{ vars.TEMPLATE_ASSETS_BUCKET }}
+  app:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.3"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python3 -m pip install PyYAML==6.0.3
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: package.json
+          run_install: false
+      - run: pnpm install --frozen-lockfile
+      - name: Check, test and build the app
+        run: pnpm run check && pnpm test && pnpm run build

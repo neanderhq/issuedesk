@@ -42,3 +42,16 @@ release records to the private template bucket and the thumbnail to the public
 assets bucket, then update `catalog/linear.json`. Source stays on GitHub at the
 registered commit; no source archive is uploaded. The standard Neander Use
 Template and Publish flows consume that registration.
+
+## License
+
+[MIT](LICENSE). Third-party components retain their respective licenses and
+existing attribution notices.
+
+## Public CI and Neander releases
+
+Public CI installs locked dependencies, checks types/syntax, runs app tests and
+builds the application. It requires no Neander publishing credentials or private
+tools. Neander's private release workflow separately verifies the committed
+application image with a disposable database, then publishes it to the template
+catalog. Existing projects continue through normal editing and Publish.
