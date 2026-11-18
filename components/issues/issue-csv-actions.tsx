@@ -26,7 +26,7 @@ export function IssueCsvActions({ filters, onImported }: { filters: Record<strin
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = "team-tracker-issues.csv";
+      anchor.download = "linear-issues.csv";
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (cause) {

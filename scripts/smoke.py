@@ -19,7 +19,7 @@ def get(route):
 
 
 status, mime, body = get("/")
-assert status == 200 and "text/html" in mime and b"Your web app" in body
+assert status == 200 and "text/html" in mime and b"Linear" in body
 asset = re.search(rb'src="([^"?]+\.js(?:\?[^" ]*)?)"', body)
 assert asset, "The HTML must reference a production JS asset"
 asset_status, asset_mime, _ = get(asset[1].decode())
@@ -27,5 +27,5 @@ assert asset_status == 200 and "javascript" in asset_mime
 status, mime, body = get("/api/health")
 assert status == 200 and "application/json" in mime and json.loads(body)["status"] == "ok"
 status, mime, body = get("/api/missing")
-assert status == 404
+assert status == 401  # The tracker catch-all authenticates API requests first.
 print(f"{starter}: production smoke passed")

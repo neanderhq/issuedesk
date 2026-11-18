@@ -87,7 +87,7 @@ export async function POST(request: Request) {
             workspaceId = accepted.workspaceId;
             role = accepted.role;
           } else {
-            const [createdWorkspace] = await transaction.insert(workspaces).values({ name: "Team Tracker" }).returning({ id: workspaces.id });
+            const [createdWorkspace] = await transaction.insert(workspaces).values({ name: "Linear" }).returning({ id: workspaces.id });
             workspaceId = createdWorkspace.id;
           }
           if (!workspaceId) throw new Error("Workspace could not be created");

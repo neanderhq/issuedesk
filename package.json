@@ -1,5 +1,5 @@
 {
-  "name": "neander-nextjs-starter",
+  "name": "neander-linear-template",
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@11.18.0",
@@ -14,7 +14,11 @@
     "check:issue-filters": "node --experimental-strip-types --env-file=.env.local scripts/check-issue-filters.mjs",
     "db:dev": "node scripts/db-dev.mjs",
     "smoke:auth": "node --env-file=.env.local scripts/smoke-auth.mjs",
-    "smoke:api": "node --env-file=.env.local scripts/smoke-api.mjs"
+    "smoke:api": "node --env-file=.env.local scripts/smoke-api.mjs",
+    "test": "python3 scripts/test_deployment_contract.py",
+    "db:migrate": "node .neander/migrate.mjs",
+    "db:seed": "node .neander/seed.mjs",
+    "test:template": "node scripts/verify-template.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.21",
@@ -37,6 +41,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@tailwindcss/postcss": "4.3.2",
     "@types/node": "24.13.3",
     "@types/pg": "8.23.1",
