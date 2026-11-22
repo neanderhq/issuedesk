@@ -18,7 +18,10 @@
     "test": "python3 scripts/test_deployment_contract.py && tsx scripts/test-markdown-security.tsx",
     "db:migrate": "node .neander/migrate.mjs",
     "db:seed": "node .neander/seed.mjs",
-    "test:template": "node scripts/verify-template.mjs"
+    "test:template": "node scripts/verify-template.mjs",
+    "test:policy": "python3 scripts/check_repository.py",
+    "verify": "pnpm run check && pnpm run test && pnpm run test:policy && pnpm run build",
+    "test:production": "node scripts/verify-template.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.21",
