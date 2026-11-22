@@ -7,7 +7,7 @@ function InlineMarkdown({ text }: { text: string }) {
     if (part.startsWith("**") && part.endsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
     if (part.startsWith("*") && part.endsWith("*")) return <em key={i}>{part.slice(1, -1)}</em>;
     const link = /^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/.exec(part);
-    if (link) {
+    if (link && URL.canParse(link[2])) {
       const url = new URL(link[2]);
       if (url.protocol === "https:" || url.protocol === "http:") return <a key={i} href={url.href} target="_blank" rel="noreferrer" className="underline underline-offset-2">{link[1]}</a>;
     }

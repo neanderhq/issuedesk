@@ -8,6 +8,8 @@ for (const value of [
   '# <script>alert(1)</script>',
   '**<svg onload=alert(1)>**',
   '[click](javascript:alert(1))',
+  '[broken](https://?)',
+  '[quote](https://example.test/"onclick=alert(1))',
   '[click](data:text/html;base64,PHNjcmlwdD4=)',
   '- <img src=x onerror=alert(1)>',
 ]) {
