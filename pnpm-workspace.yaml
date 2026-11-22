@@ -1,8 +1,5 @@
-allowBuilds:
-  '@embedded-postgres/darwin-arm64': true
-  '@embedded-postgres/linux-x64': true
-  '@embedded-postgres/linux-arm64': true
-  esbuild: true
+# Dependency installation scripts are enabled for Neander project development.
+dangerouslyAllowAllBuilds: true
 overrides:
   '@esbuild-kit/core-utils>esbuild': 0.25.12
 minimumReleaseAgeExclude:
