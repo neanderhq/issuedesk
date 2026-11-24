@@ -98,6 +98,8 @@ try {
   await page.reload();
   await expect(page.getByText(updatedTitle, { exact: true })).toBeVisible();
   assert.deepEqual(errors, [], 'Seeded UI must have no browser runtime errors');
+  const experience = await exec(process.execPath, ['scripts/test-issue-experience.mjs', origin.origin], { timeout: 120000, maxBuffer: 2 * 1024 * 1024 });
+  console.log(experience.stdout.trim());
   console.log('Built-image verification passed: login, 20 seeded issues, Product Launch project, board rendering, persistent edit/status change, seed retry preservation and container restart.');
 } catch (error) {
   const logs = await exec('docker', ['logs', '--tail', '80', name]).catch(() => ({ stdout: '', stderr: '' }));

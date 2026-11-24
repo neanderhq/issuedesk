@@ -66,6 +66,7 @@ function EditError({ conflict, message, saving, onReload, onRetry }: { conflict:
 export function IssueDetailPage({ identifier, userId }: { identifier: string; userId: string }) {
   const [data, setData] = useState<DetailData | null>(null);
   const [drafts, setDrafts] = useState<Drafts>({});
+  const [titleError, setTitleError] = useState("");
   const [editingDescription, setEditingDescription] = useState(false);
   const [previewDescription, setPreviewDescription] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
@@ -511,7 +512,30 @@ export function IssueDetailPage({ identifier, userId }: { identifier: string; us
       <div className="grid min-w-0 content-start gap-5">
         <section className="grid min-w-0 gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2"><span className="font-mono text-sm text-muted-foreground">{issue.identifier}</span>{isArchived && <Badge variant="secondary">Archived</Badge>}{isBlocked && <Badge variant="destructive">Blocked</Badge>}{savingField && savingField !== "follow" && savingField !== "relation" && <span className="flex items-center gap-1 text-xs text-muted-foreground"><LoaderCircle className="size-3 animate-spin" />Saving</span>}</div>
-          <Input aria-label="Issue title" maxLength={200} value={title} disabled={busy || isArchived} onChange={(event) => { trackDraft("title"); setDrafts((current) => ({ ...current, title: event.target.value })); }} onBlur={() => { if (title.trim() && title !== issue.title) void saveField("title", title.trim()); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} className="h-auto border-0 px-0 py-1 text-2xl font-semibold tracking-tight shadow-none focus-visible:ring-0" />
+          <Input
+            aria-label="Issue title"
+            aria-invalid={Boolean(titleError)}
+            aria-describedby={titleError ? "issue-title-error" : undefined}
+            maxLength={200}
+            value={title}
+            disabled={busy || isArchived}
+            onChange={(event) => {
+              trackDraft("title");
+              setDrafts((current) => ({ ...current, title: event.target.value }));
+              if (event.target.value.trim()) setTitleError("");
+            }}
+            onBlur={() => {
+              if (!title.trim()) {
+                setTitleError("Enter an issue title. Your previous title is still saved.");
+                return;
+              }
+              setTitleError("");
+              if (title !== issue.title) void saveField("title", title.trim());
+            }}
+            onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+            className="h-auto border-0 px-1 py-1 text-2xl font-semibold tracking-tight shadow-none focus-visible:ring-2"
+          />
+          {titleError && <p id="issue-title-error" role="alert" className="text-sm text-destructive">{titleError}</p>}
           <div className="rounded-lg border bg-card p-3 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="text-sm font-medium">Description</h2>{editingDescription && <Button size="xs" variant="ghost" disabled={isArchived} onClick={() => setPreviewDescription((value) => !value)}>{previewDescription ? <><EyeOff />Edit</> : <><Eye />Preview</>}</Button>}</div>
             {editingDescription ? <div className="grid gap-3">{previewDescription ? <div className="min-h-24 rounded-md border bg-muted/20 p-3"><MarkdownPreview value={descriptionDraft} /></div> : <div className="grid gap-1"><Label htmlFor="issue-description-markdown" className="text-xs text-muted-foreground">Markdown editor</Label><Textarea id="issue-description-markdown" maxLength={20000} value={descriptionDraft} disabled={isArchived} onChange={(event) => { trackDraft("description"); setDescriptionDraft(event.target.value); }} className="min-h-36 break-all [overflow-wrap:anywhere]" /></div>}
