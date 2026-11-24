@@ -127,21 +127,22 @@ export function TeamTrackerShell({ activePage, issueIdentifier, projectId, cycle
   }, []);
   const pages = useMemo<FrameworkPage[]>(() => [
     ...(issueIdentifier ? ([{ id: "issue", label: "Issue", icon: "bolt", title: issueIdentifier, content: <RoutePage path={`/issue/${encodeURIComponent(issueIdentifier)}`}><IssueDetailPage identifier={issueIdentifier} userId={userId} /></RoutePage> }] satisfies FrameworkPage[]) : []),
-    { id: "inbox", label: "Inbox", icon: "mail", title: "Inbox", badge: unreadCount || undefined, content: <RoutePage path="/inbox"><LiveInboxPage refreshUnread={() => { void refreshUnread(); }} /></RoutePage> },
-    { id: "my-issues", label: "My Issues", icon: "task", title: "My Issues", content: <RoutePage path="/my-issues"><IssueListPage view="my-issues" userId={userId} /></RoutePage> },
-    { id: "backlog", label: "Backlog", icon: "clock", title: "Backlog", content: <RoutePage path="/backlog"><IssueListPage view="backlog" userId={userId} /></RoutePage> },
+    { id: "inbox", layout: "editor", label: "Inbox", icon: "mail", title: "Inbox", badge: unreadCount || undefined, content: <RoutePage path="/inbox"><LiveInboxPage refreshUnread={() => { void refreshUnread(); }} /></RoutePage> },
+    { id: "my-issues", layout: "editor", label: "My Issues", icon: "task", title: "My Issues", content: <RoutePage path="/my-issues"><IssueListPage view="my-issues" userId={userId} /></RoutePage> },
+    { id: "backlog", layout: "editor", label: "Backlog", icon: "clock", title: "Backlog", content: <RoutePage path="/backlog"><IssueListPage view="backlog" userId={userId} /></RoutePage> },
     { id: "board", label: "Board", icon: "grid", title: "Board", content: <RoutePage path="/board"><IssueBoardPage /></RoutePage> },
-    { id: "list", label: "List", icon: "grid", title: "List", content: <RoutePage path="/list"><IssueListPage view="list" userId={userId} /></RoutePage> },
+    { id: "list", layout: "editor", label: "List", icon: "grid", title: "List", content: <RoutePage path="/list"><IssueListPage view="list" userId={userId} /></RoutePage> },
     ...savedViews.map((savedView) => ({
       id: `saved-view-${savedView.id}`,
       label: savedView.name,
+      layout: savedView.layout === "List" ? "editor" as const : "page" as const,
       icon: "grid" as const,
       title: savedView.name,
       content: <RoutePage path={`/saved-views/${encodeURIComponent(savedView.id)}`}><SavedIssueView viewId={savedView.id} userId={userId} /></RoutePage>,
     })),
     { id: "projects", label: "Projects", icon: "folder", title: "Projects", content: <RoutePage path={projectId ? `/projects/${encodeURIComponent(projectId)}` : "/projects"}>{projectId ? <ProjectDetailPage projectId={projectId} /> : <ProjectsListPage />}</RoutePage> },
-    { id: "cycles", label: "Cycles", icon: "clock", title: "Cycles", content: <RoutePage path={cycleId ? `/cycles/${encodeURIComponent(cycleId)}` : "/cycles"}>{cycleId ? <CycleDetailPage key={cycleId} cycleId={cycleId} /> : <CyclesListPage />}</RoutePage> },
-    { id: "archive", label: "Archive", icon: "folder", title: "Archive", content: <RoutePage path="/archive"><IssueArchivePage /></RoutePage> },
+    { id: "cycles", layout: "editor", label: "Cycles", icon: "clock", title: "Cycles", content: <RoutePage path={cycleId ? `/cycles/${encodeURIComponent(cycleId)}` : "/cycles"}>{cycleId ? <CycleDetailPage key={cycleId} cycleId={cycleId} /> : <CyclesListPage />}</RoutePage> },
+    { id: "archive", layout: "editor", label: "Archive", icon: "folder", title: "Archive", content: <RoutePage path="/archive"><IssueArchivePage /></RoutePage> },
     { id: "settings-members", label: "Members", icon: "people", title: "Members", content: <RoutePage path="/settings/members"><SettingsPage section="members" role={role} name={name} email={email} /></RoutePage> },
     { id: "settings-workspace", label: "Workspace", icon: "settings", title: "Workspace", content: <RoutePage path="/settings/workspace"><SettingsPage section="workspace" role={role} name={name} email={email} /></RoutePage> },
   ], [email, name, role, userId, issueIdentifier, projectId, cycleId, savedViews, unreadCount, refreshUnread]);
