@@ -29,6 +29,13 @@
       "when": 1794452050293,
       "tag": "0003_keen_the_anarchist",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795590497314,
+      "tag": "0004_workspace_cursor_cascade",
+      "breakpoints": true
     }
   ]
 }

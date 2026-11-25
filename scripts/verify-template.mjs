@@ -51,6 +51,8 @@ try {
   await exec('python3', ['scripts/test_entrypoint.py'], { timeout: 60000 });
   await exec('python3', ['scripts/smoke.py', origin.origin], { timeout: 60000 });
   await db.connect(); connected = true;
+  const cursors = await exec(process.execPath, ['scripts/test-workspace-cursors.mjs'], { timeout: 30000 });
+  console.log(cursors.stdout.trim());
   const credentialBefore = (await db.query('SELECT password FROM account WHERE user_id=$1', [DEMO_OWNER_ID])).rows[0].password;
   assert.deepEqual(await seed({ databaseUrl, password }), { created: false });
   await exec('pnpm', ['exec', 'playwright', 'install', ...(process.platform === 'linux' ? ['--with-deps'] : []), 'chromium'], { timeout: 180000, maxBuffer: 8 * 1024 * 1024 });

@@ -48,3 +48,18 @@ then run `node scripts/test-issue-experience.mjs "$BETTER_AUTH_URL"`. The script
 requires a loopback origin and an explicitly disposable database. Set
 `NEANDER_ISSUE_EXPERIENCE_EVIDENCE` to a local ignored directory for screenshots.
 This local route does not replace Docker-image verification.
+
+## Workspace change-cursor regression
+
+The production verifier runs `scripts/test-workspace-cursors.mjs` against its
+migrated disposable PostgreSQL database. It checks that issue and label changes
+still advance the right workspace cursor, issue deletion preserves change
+notifications, and deleting a workspace cascades without recreating a cursor for
+the removed parent. An unrelated workspace stays intact. All fixtures roll back.
+
+For a local disposable database with equal `DATABASE_URL` and
+`NEANDER_TEMPLATE_TEST_DATABASE_URL`, run:
+
+```sh
+node --env-file=.env.local scripts/test-workspace-cursors.mjs
+```
