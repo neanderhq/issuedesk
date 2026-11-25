@@ -17,6 +17,7 @@ export const workspacePages = [
   "cycles",
   "archive",
   "templates",
+  "settings-github",
   "settings-members",
   "settings-workspace",
 ] as const;

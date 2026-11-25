@@ -1,3 +1,4 @@
+import { githubConnectionRoute, githubIssueRoute } from "./github-integration";
 import { projectUpdatesRoute } from "./project-updates";
 import { issueTemplatesRoute } from "./issue-templates";
 import { and, asc, desc, eq, exists, ilike, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
@@ -1942,7 +1943,7 @@ async function activityRoute(request: Request, access: Access, issueId: string) 
   if (request.method !== "GET") return jsonError("Method not allowed", 405);
   const rows = await database.select({ entry: activity, actorName: user.name }).from(activity).leftJoin(user, eq(activity.actorId, user.id))
     .where(and(eq(activity.workspaceId, access.membership.workspaceId), eq(activity.issueId, parsedIssueId))).orderBy(desc(activity.createdAt));
-  return Response.json({ activity: rows.map(({ entry, actorName }) => ({ ...entry, actorName })) });
+  return Response.json({ activity: rows.map(({ entry, actorName }) => ({ ...entry, actorName: entry.metadata.source === "github" ? "GitHub" : actorName })) });
 }
 
 async function notificationsRoute(request: Request, access: Access, notificationId?: string, action?: string) {
@@ -1956,7 +1957,7 @@ async function notificationsRoute(request: Request, access: Access, notification
     const [{ count }] = await database.select({ count: sql<number>`count(*)::int` }).from(notifications)
       .where(and(eq(notifications.workspaceId, workspaceId), eq(notifications.userId, userId), isNull(notifications.readAt)));
     return Response.json({ notifications: rows.map(({ notification, issueNumber, issueTitle, issueKeyPrefix, actorName }) => ({
-      ...notification, actorName, issueTitle, issueIdentifier: issueNumber && issueKeyPrefix ? `${issueKeyPrefix}-${issueNumber}` : null, unreadCount: Number(count),
+      ...notification, actorName: notification.payload.source === "github" ? "GitHub" : actorName, issueTitle, issueIdentifier: issueNumber && issueKeyPrefix ? `${issueKeyPrefix}-${issueNumber}` : null, unreadCount: Number(count),
     })), unreadCount: Number(count) });
   }
   if (!notificationId && action === "unread-count" && request.method === "GET") {
@@ -1986,6 +1987,8 @@ async function notificationsRoute(request: Request, access: Access, notification
 export async function trackerApiRoute(request: Request, route: string[]) {
   const access = await accessFor(request);
   if ("response" in access) return access.response;
+  if (route.join("/") === "integrations/github") return githubConnectionRoute(request, access);
+  if (route[0] === "issues" && route[2] === "pull-request" && (route.length === 3 || (route.length === 4 && route[3] === "refresh"))) return githubIssueRoute(request, access, route[1], route.length === 4);
   if (route[0] === "issue-templates") return issueTemplatesRoute(request, access, route.slice(1));
   if (route[0] === "notifications" && route.length === 1) return notificationsRoute(request, access);
   if (route[0] === "notifications" && route[1] === "unread-count" && route.length === 2) return notificationsRoute(request, access, undefined, "unread-count");

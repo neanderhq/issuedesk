@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useLiveUpdates } from "@/components/live-updates/use-live-updates";
+import { GitHubSettings } from "@/components/integrations/github-settings";
 import { MembersSettings, WorkspaceSettings } from "@/components/workspace-settings";
 import { authClient } from "@/app/auth-client";
 import { IssueListPage } from "@/components/issues/issue-list";
@@ -145,6 +146,7 @@ export function TeamTrackerShell({ activePage, issueIdentifier, projectId, cycle
     { id: "cycles", layout: "editor", label: "Cycles", icon: "clock", title: "Cycles", content: <RoutePage path={cycleId ? `/cycles/${encodeURIComponent(cycleId)}` : "/cycles"}>{cycleId ? <CycleDetailPage key={cycleId} cycleId={cycleId} /> : <CyclesListPage />}</RoutePage> },
     { id: "archive", layout: "editor", label: "Archive", icon: "folder", title: "Archive", content: <RoutePage path="/archive"><IssueArchivePage /></RoutePage> },
     { id: "templates", layout: "editor", label: "Issue templates", icon: "folder", title: "Issue templates", content: <RoutePage path="/templates"><TemplateLibrary role={role} /></RoutePage> },
+    { id: "settings-github", label: "GitHub", icon: "settings", title: "GitHub", content: <RoutePage path="/settings/github"><div className="p-4 sm:p-8"><GitHubSettings /></div></RoutePage> },
     { id: "settings-members", label: "Members", icon: "people", title: "Members", content: <RoutePage path="/settings/members"><SettingsPage section="members" role={role} name={name} email={email} /></RoutePage> },
     { id: "settings-workspace", label: "Workspace", icon: "settings", title: "Workspace", content: <RoutePage path="/settings/workspace"><SettingsPage section="workspace" role={role} name={name} email={email} /></RoutePage> },
   ], [email, name, role, userId, issueIdentifier, projectId, cycleId, savedViews, unreadCount, refreshUnread]);

@@ -3,14 +3,19 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
-import { chromium, expect } from '@playwright/test';
+import { chromium, expect, request } from '@playwright/test';
 import { Client } from 'pg';
 import { DEMO_OWNER_ID, DEMO_EMAIL, WORKSPACE_ID, seed } from '../.neander/seed.mjs';
 
+import { startGitHubFixture } from './testing/github-provider-fixture.mjs';
+import { testGitHubWorkflows } from './testing/github-workflows.mjs';
+import { testGitHubBrowser } from './testing/github-browser.mjs';
+import { testFeaturePersistence } from './testing/feature-persistence.mjs';
+import { testFeatureWorkflows } from './test-feature-workflows.mjs';
 const exec = promisify(execFile);
 const image = process.env.NEANDER_TEMPLATE_IMAGE;
 const databaseUrl = process.env.NEANDER_TEMPLATE_TEST_DATABASE_URL;
@@ -25,6 +30,7 @@ assert.ok(password && process.env.BETTER_AUTH_SECRET);
 const name = `linear-template-check-${randomUUID().slice(0, 12)}`;
 const directory = await mkdtemp(join(tmpdir(), 'linear-template-'));
 const bundle = join(directory, 'neander_environment');
+const fixture = await startGitHubFixture();
 const runtimeDatabase = new URL(databaseUrl);
 if (process.platform === 'darwin' && ['localhost', '127.0.0.1'].includes(runtimeDatabase.hostname)) runtimeDatabase.hostname = 'host.docker.internal';
 const environment = { DATABASE_URL: runtimeDatabase.href, BETTER_AUTH_URL: origin.origin, BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET, DEMO_OWNER_PASSWORD: password };
@@ -47,6 +53,17 @@ const headers = { origin: origin.origin };
 try {
   const networking = process.platform === 'linux' ? ['--network', 'host', '--env', `PORT=${origin.port || 80}`] : ['--publish', `127.0.0.1:${origin.port || 80}:8080`];
   await exec('docker', ['run', '--detach', '--name', name, '--mount', `type=bind,src=${bundle},dst=/run/secrets/neander_environment,readonly`, ...networking, image], { timeout: 60000 });
+  await ready();
+  const unconfigured = await request.newContext({ baseURL: origin.origin, extraHTTPHeaders: headers });
+  await json(await unconfigured.post('/api/auth/sign-in/email', { data: { email: DEMO_EMAIL, password } }));
+  const missingConfiguration = await json(await unconfigured.get('/api/integrations/github'));
+  assert.equal(missingConfiguration.status, 'unconfigured');
+  assert.equal((await unconfigured.post('/api/integrations/github', { data: { version: 0, shareWithWorkspace: true } })).status(), 409);
+  await unconfigured.dispose();
+  await exec('docker', ['rm', '--force', name], { timeout: 30000 });
+  const configuredEnvironment = { ...environment, ...fixture.env, NODE_OPTIONS: '--import=/tmp/issuedesk-github-fetch-transport.mjs', ISSUEDESK_TEST_GITHUB_ORIGIN: process.platform === 'darwin' ? `http://host.docker.internal:${fixture.port}` : fixture.origin };
+  await writeFile(bundle, Object.entries(configuredEnvironment).map(([key, value]) => `${key}=${value}`).join('\n') + '\n', { mode: 0o644 });
+  await exec('docker', ['run', '--detach', '--name', name, '--mount', `type=bind,src=${bundle},dst=/run/secrets/neander_environment,readonly`, '--mount', `type=bind,src=${resolve('scripts/testing/github-fetch-transport.mjs')},dst=/tmp/issuedesk-github-fetch-transport.mjs,readonly`, ...networking, image], { timeout: 60000 });
   await ready();
   await exec('python3', ['scripts/test_entrypoint.py'], { timeout: 60000 });
   await exec('python3', ['scripts/smoke.py', origin.origin], { timeout: 60000 });
@@ -102,6 +119,11 @@ try {
   assert.deepEqual(errors, [], 'Seeded UI must have no browser runtime errors');
   const experience = await exec(process.execPath, ['scripts/test-issue-experience.mjs', origin.origin], { timeout: 120000, maxBuffer: 2 * 1024 * 1024 });
   console.log(experience.stdout.trim());
+  await testFeatureWorkflows(origin.origin, { afterTemplates: context => testGitHubWorkflows(context, fixture, origin.origin) });
+  const featureExperience = await exec(process.execPath, ['scripts/test-feature-experience.mjs', origin.origin], { timeout: 120000, maxBuffer: 2 * 1024 * 1024 });
+  console.log(featureExperience.stdout.trim());
+  await testGitHubBrowser(origin.origin, fixture, process.env.ISSUEDESK_FEATURE_EVIDENCE ? join(process.env.ISSUEDESK_FEATURE_EVIDENCE, 'github-ui') : undefined);
+  await testFeaturePersistence(origin.origin, fixture, async () => { await exec('docker', ['restart', name], { timeout: 60000 }); await ready(); }, context.request);
   console.log('Built-image verification passed: login, 20 seeded issues, Product Launch project, board rendering, persistent edit/status change, seed retry preservation and container restart.');
 } catch (error) {
   const logs = await exec('docker', ['logs', '--tail', '80', name]).catch(() => ({ stdout: '', stderr: '' }));
@@ -114,5 +136,6 @@ try {
     await db.end();
   }
   await exec('docker', ['rm', '--force', name]).catch(() => {});
+  await fixture.close();
   await rm(directory, { recursive: true, force: true });
 }

@@ -63,3 +63,29 @@ For a local disposable database with equal `DATABASE_URL` and
 ```sh
 node --env-file=.env.local scripts/test-workspace-cursors.mjs
 ```
+
+## Selected feature workflows
+
+On a disposable migrated/seeded database and a running production build,
+`pnpm test:features` checks template and project-update persistence, invalid input,
+optimistic conflicts, author/Admin boundaries and workspace isolation.
+`pnpm test:feature-ui` exercises those workflows in Chromium at desktop and 375px,
+including replacement confirmation, preserved drafts and keyboard focus.
+
+`pnpm test:github-runtime` starts the real standalone production server twice:
+first Unconfigured, then with disposable App credentials and a controlled local
+HTTP provider. Stop any existing server at BETTER_AUTH_URL first. The preload under
+`scripts/testing/` changes only the test process's GitHub fetch transport; the
+application uses the maintained Octokit SDK and normal GitHub endpoints. The fixture
+verifies signed App JWTs, installation-token scope and read-only provider requests.
+Tests cover raw webhook signatures, immutable repository authority, delivery replay,
+ordering, terminal merge state, opt-in/once-only completion, archive/revocation,
+roles/tenants, invalid input, phone/keyboard recovery, seed retry and process restart.
+Set `ISSUEDESK_FEATURE_EVIDENCE` to an ignored output directory for original fictional
+browser captures. No live GitHub installation or external writes are required.
+
+`pnpm test:production` includes the feature API/browser and restart checks in the
+built Docker image. It checks Unconfigured before injecting the controlled provider,
+then runs the existing core/seed/restart/phone checks unchanged. Controlled-provider
+success does not establish real GitHub installation or live webhook delivery; those
+require the operator configuration described in `docs/github-integration.md`.

@@ -425,3 +425,43 @@ export const projectUpdateRevisions = pgTable("project_update_revisions", {
   action: varchar("action", { length: 20 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [uniqueIndex("project_update_revisions_version_unique").on(table.updateId, table.version)]);
+
+export const githubConnections = pgTable("github_connections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  installationId: bigint("installation_id", { mode: "number" }).notNull(),
+  repositoryId: bigint("repository_id", { mode: "number" }).notNull(),
+  repository: varchar("repository", { length: 200 }).notNull(),
+  status: varchar("status", { length: 30 }).notNull(),
+  reason: text("reason"),
+  connectedById: text("connected_by_id").references(() => user.id, { onDelete: "set null" }),
+  version: integer("version").default(1).notNull(),
+  lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [uniqueIndex("github_connections_workspace_unique").on(table.workspaceId),uniqueIndex("github_connections_installation_repository_unique").on(table.installationId,table.repositoryId)]);
+export const githubPullRequests = pgTable("github_pull_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  connectionId: uuid("connection_id").notNull().references(() => githubConnections.id, { onDelete: "cascade" }),
+  issueId: uuid("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+  providerId: bigint("provider_id", { mode: "number" }).notNull(),
+  number: integer("number").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  state: varchar("state", { length: 20 }).notNull(),
+  baseBranch: varchar("base_branch", { length: 255 }).notNull(),
+  providerUpdatedAt: timestamp("provider_updated_at", { withTimezone: true }).notNull(),
+  lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }).notNull(),
+  completeOnMerge: boolean("complete_on_merge").default(false).notNull(),
+  completionAppliedAt: timestamp("completion_applied_at", { withTimezone: true }),
+  version: integer("version").default(1).notNull(),
+  unlinkedAt: timestamp("unlinked_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, table=>[uniqueIndex("github_pull_requests_active_issue_unique").on(table.issueId).where(sql`${table.unlinkedAt} is null`),index("github_pull_requests_provider_idx").on(table.connectionId,table.providerId)]);
+export const githubDeliveries=pgTable("github_deliveries", {
+ id:uuid("id").defaultRandom().primaryKey(),
+ connectionId:uuid("connection_id").notNull().references(()=>githubConnections.id,{onDelete:"cascade"}),
+ deliveryId:uuid("delivery_id").notNull(),bodyHash:varchar("body_hash",{length:64}).notNull(),event:varchar("event",{length:80}).notNull(),
+ createdAt:timestamp("created_at",{withTimezone:true}).defaultNow().notNull(),
+},table=>[uniqueIndex("github_deliveries_connection_delivery_unique").on(table.connectionId,table.deliveryId)]);

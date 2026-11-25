@@ -1,4 +1,5 @@
 "use client";
+import { GitHubPullRequest } from "./github-pull-request";
 
 import Link from "next/link";
 import { MarkdownPreview } from "./markdown-preview";
@@ -587,6 +588,7 @@ export function IssueDetailPage({ identifier, userId }: { identifier: string; us
       </div>
 
       <aside className="grid min-w-0 content-start gap-4">
+        <GitHubPullRequest issueId={issue.id} archived={isArchived} />
         <section className="grid min-w-0 gap-1 rounded-lg border bg-card p-3 sm:p-4">
           <h2 className="mb-2 text-sm font-semibold">Details</h2>
           <Field label="Status"><Select value={status} disabled={busy || isArchived} onValueChange={(value) => void saveField("status", value)}><SelectTrigger aria-label="Status" className="h-8 w-full"><SelectValue /></SelectTrigger><SelectContent>{issueStatuses.map((value) => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></Field>
@@ -635,6 +637,11 @@ export function IssueDetailPage({ identifier, userId }: { identifier: string; us
 }
 
 function activityText(entry: IssueActivity) {
+  if (entry.action === "pull_request_automation_enabled") return "enabled completion when the linked pull request merges";
+  if (entry.action === "pull_request_automation_disabled") return "disabled pull request completion";
+  if (entry.action === "github_completed") return "completed this issue after its linked pull request merged";
+  if (entry.action === "pull_request_linked") return "linked a GitHub pull request";
+  if (entry.action === "pull_request_unlinked") return "unlinked a GitHub pull request";
   if (entry.action === "created") return "created this issue";
   if (entry.action === "attachment_added") return "added an attachment";
   if (entry.action === "attachment_removed") return "removed an attachment";

@@ -39,6 +39,31 @@ x-neander:
       source: generated
       provider: null
       generator: opaque-random
+    - service: web
+      name: GITHUB_APP_ID
+      required: false
+      source: user
+      provider: null
+    - service: web
+      name: GITHUB_APP_PRIVATE_KEY
+      required: false
+      source: user
+      provider: null
+    - service: web
+      name: GITHUB_INSTALLATION_ID
+      required: false
+      source: user
+      provider: null
+    - service: web
+      name: GITHUB_REPOSITORY
+      required: false
+      source: user
+      provider: null
+    - service: web
+      name: GITHUB_WEBHOOK_SECRET
+      required: false
+      source: user
+      provider: null
   probes:
     - path: /api/health
       success_status_range: 2xx
