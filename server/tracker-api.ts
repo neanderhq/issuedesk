@@ -1,3 +1,4 @@
+import { projectUpdatesRoute } from "./project-updates";
 import { issueTemplatesRoute } from "./issue-templates";
 import { and, asc, desc, eq, exists, ilike, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -1995,6 +1996,7 @@ export async function trackerApiRoute(request: Request, route: string[]) {
   }
   if (route[0] === "saved-views" && route.length <= 2) return savedViewsRoute(request, access, route[1]);
   if (route[0] === "labels" && route.length <= 2) return labelsRoute(request, access, route[1]);
+  if (route[0] === "projects" && route[1] && route[2] === "updates" && [3,4].includes(route.length)) return projectUpdatesRoute(request, access, route[1], route[3]);
   if (route[0] === "projects" && route.length <= 2) return projectsRoute(request, access, route[1]);
   if (route[0] === "milestones" && route[1] === "reorder" && route.length === 2 && request.method === "POST") return reorderMilestones(request, access);
   if (route[0] === "milestones" && route.length <= 2) return milestonesRoute(request, access, route[1]);

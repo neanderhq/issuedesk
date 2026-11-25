@@ -400,3 +400,28 @@ export const issueTemplates = pgTable("issue_templates", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [uniqueIndex("issue_templates_workspace_name_unique").on(table.workspaceId, sql`lower(${table.name})`)]);
+
+export const projectHealth = pgEnum("project_health", ["On track", "At risk", "Off track"]);
+export const projectUpdates = pgTable("project_updates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  projectId: uuid("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  authorName: varchar("author_name", { length: 120 }).notNull(),
+  health: projectHealth("health").notNull(), body: text("body").notNull(),
+  version: integer("version").default(1).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }),
+}, (table) => [index("project_updates_workspace_project_created_idx").on(table.workspaceId, table.projectId, table.createdAt)]);
+export const projectUpdateRevisions = pgTable("project_update_revisions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  updateId: uuid("update_id").notNull().references(() => projectUpdates.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  health: projectHealth("health").notNull(), body: text("body").notNull(),
+  actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+  actorName: varchar("actor_name", { length: 120 }).notNull(),
+  action: varchar("action", { length: 20 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [uniqueIndex("project_update_revisions_version_unique").on(table.updateId, table.version)]);
