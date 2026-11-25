@@ -1,12 +1,34 @@
 contract_version: 1
 id: linear
 title: IssueDesk
-description: Track team issues with boards, projects, cycles, priorities, dependencies and comments.
+description: >-
+  Plan team work with issue boards, reusable issue templates, project health updates
+  and dated history. Track cycles, dependencies and collaboration, then link GitHub
+  pull requests with optional completion on merge. GitHub requires an
+  operator-configured GitHub App; no external connection is preconfigured.
 category: Project Management
 best_for: Product and engineering teams planning their work
-features: [Issue boards and lists, Projects and milestones, Cycles, Sub-issues and dependencies, Comments and notifications, Team roles]
-included: [Issue tracking application, PostgreSQL migrations, Fictional Product Launch project]
+features:
+  - Issue boards, lists and My Issues
+  - Reusable issue templates with safe draft replacement
+  - Projects, milestones and health update history
+  - Cycles, sub-issues and dependencies
+  - Comments, attachments and notifications
+  - Saved views and CSV import/export
+  - Workspace Admin and Member roles
+  - GitHub PR links and opt-in completion (App setup required)
+included:
+  - Issue tracking application with a workspace template library
+  - Project health notes with retained revision history
+  - Configurable read-only GitHub App integration and verified webhook handling
+  - PostgreSQL migrations and fictional Product Launch sample data
+  - Original desktop and phone gallery captures
 thumbnail: .neander/thumbnail.png
+screenshots:
+  - .neander/gallery/issue-templates.png
+  - .neander/gallery/project-health-history.png
+  - .neander/gallery/github-pr-controlled-demo.png
+  - .neander/gallery/project-health-phone.png
 commands:
   install: [pnpm, install, --frozen-lockfile]
   check: [pnpm, run, check]
