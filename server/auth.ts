@@ -14,6 +14,8 @@ function createAuth(sendResetPassword?: (url: string, token?: string) => Promise
     ? [new URL(required("BETTER_AUTH_URL")).origin]
     : ["http://localhost:3000", "http://127.0.0.1:3000"];
   return betterAuth({
+    // Adapter errors can contain SQL parameters/session tokens. Keep logs metadata-only.
+    logger: { log: (level) => { if (level === "error" || level === "warn") console.error(`[auth] ${level}: operation requires attention`); } },
     baseURL,
     trustedOrigins,
     secret: required("BETTER_AUTH_SECRET"),

@@ -5,12 +5,12 @@ import { hasExplicitlyClearedSavedViewFilters, writeIssueFiltersToSearch } from 
 const origin = process.env.ISSUE_FILTERS_ORIGIN || "http://127.0.0.1:3000";
 const originUrl = new URL(origin);
 const loopbackHosts = new Set(["127.0.0.1", "localhost", "[::1]"]);
-if (!loopbackHosts.has(originUrl.hostname) || originUrl.port !== "3000") throw new Error("Issue filter checks only run against a loopback preview on port 3000");
+if (!loopbackHosts.has(originUrl.hostname) || originUrl.protocol !== "http:") throw new Error("Issue filter checks only run against a loopback HTTP preview");
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required; run with node --env-file=.env.local");
 const databaseUrl = new URL(process.env.DATABASE_URL);
-if (!loopbackHosts.has(databaseUrl.hostname) || databaseUrl.port !== "55432" || databaseUrl.pathname !== "/neander_dev") {
-  throw new Error("Issue filter checks only run against the local neander_dev database on loopback port 55432");
+if (!loopbackHosts.has(databaseUrl.hostname) || process.env.DATABASE_URL !== process.env.NEANDER_TEMPLATE_TEST_DATABASE_URL) {
+  throw new Error("Issue filter checks require a loopback explicitly disposable NEANDER_TEMPLATE_TEST_DATABASE_URL equal to DATABASE_URL");
 }
 
 const email = process.env.TRACKER_TEST_EMAIL;

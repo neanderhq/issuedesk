@@ -102,7 +102,7 @@ export async function runRoute(label: string, handler: () => Promise<Response | 
   try {
     return await handler() ?? jsonError("Unexpected server response", 500);
   } catch (error) {
-    console.error(`[${label}]`, error);
+    console.error(`[${label}] request failed`, error instanceof Error ? error.name : "UnknownError");
     return jsonError("Unexpected server error", 500);
   }
 }

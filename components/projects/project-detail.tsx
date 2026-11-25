@@ -1,5 +1,7 @@
 "use client";
 
+import { ProjectUpdates } from "./project-updates";
+
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Archive, ArchiveRestore, ArrowDown, ArrowLeft, ArrowUp, CalendarDays, LoaderCircle, Plus, RotateCw, Trash2 } from "lucide-react";
@@ -339,6 +341,7 @@ export function ProjectDetailPage({ projectId }: { projectId: string }) {
         <AttioStat label="Estimate points done" value={`${project.progress.donePoints} / ${project.progress.totalPoints}`} detail="Unestimated issues count as zero points" />
         <AttioStat label="Project lead" value={memberName} detail={`${formatDate(project.startDate)} – ${formatDate(project.targetDate)}`} />
       </AttioStats>
+      <ProjectUpdates projectId={projectId} archived={archived} />
       <AttioGrid columns={2} min={300}>
         <AttioCard><form onSubmit={(event) => void saveProject(event)} className="grid min-w-0 gap-4">
           <AttioSection title="Project details" description="Update the project name, description, lead, and dates."><div /></AttioSection>

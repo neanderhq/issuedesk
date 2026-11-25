@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import { createHmac,randomUUID } from 'node:crypto';
+export async function testGitHubWorkflows({api,admin,member,foreign,anon,db,me,issues,prefix},fixture,origin){
+ const configPath='/api/integrations/github';
+ const connection=async()=>api(admin,configPath);
+ const issue=await api(member,'/api/issues','POST',{title:prefix+' linked work'},201);issues.push(issue.id);const path='/api/issues/'+issue.id+'/pull-request';
+ const link=async()=> (await api(member,path)).link;
+ let webhookChecks=0;
+ async function webhook(payload,{event='pull_request',delivery=randomUUID(),signature,body}={}){const raw=body??JSON.stringify(payload);const digest='sha256='+createHmac('sha256',fixture.webhookSecret).update(raw).digest('hex');const result=await fetch(origin+'/api/integrations/github/webhook',{method:'POST',headers:{'content-type':'application/json','x-hub-signature-256':signature??digest,'x-github-event':event,'x-github-delivery':delivery},body:raw});webhookChecks++;return result;}
+ const payload=pr=>({action:pr.merged_at?'closed':'synchronize',installation:{id:fixture.installationId},repository:{id:fixture.repositoryId},pull_request:pr});
+ const status=async()=> (await api(member,'/api/issues/'+issue.id)).status;
+ await api(anon,configPath,'GET',undefined,401);await api(foreign,path,'GET',undefined,404);
+ await api(member,configPath,'POST',{version:0,shareWithWorkspace:true},403);await api(admin,configPath,'POST',{version:0,shareWithWorkspace:false},400);
+ let state=await connection();assert.equal(state.status,'unconnected');assert.equal(state.offeredRepository,fixture.repository);
+ await api(admin,configPath,'POST',{version:0,shareWithWorkspace:true});state=await connection();assert.equal(state.status,'connected');assert.equal(state.connection.repositoryId,fixture.repositoryId);assert.equal((await api(member,configPath)).offeredRepository,null);
+ await api(foreign,configPath,'POST',{version:0,shareWithWorkspace:true},403);
+ const foreignUser=(await api(foreign,'/api/me')).user.id;await db.query("UPDATE memberships SET role='Admin' WHERE user_id=$1",[foreignUser]);await api(foreign,configPath,'POST',{version:0,shareWithWorkspace:true},409);await db.query("UPDATE memberships SET role='Member' WHERE user_id=$1",[foreignUser]);
+ await api(member,path,'POST',{url:'https://github.com/foreign/repo/pull/1'},400);await api(member,path,'POST',{url:'https://github.com/'+fixture.repository+'/pull/999'},400);
+ await api(member,path,'POST',{url:'http://github.com/'+fixture.repository+'/pull/1'},400);assert.equal(await link(),null);
+ await api(member,'/api/issues/'+issue.id+'/follow','POST',{});
+ let saved=await api(member,path,'POST',{url:'https://github.com/'+fixture.repository+'/pull/1'},201);assert.equal(saved.completeOnMerge,false);assert.equal(saved.state,'Open');assert.equal(await status(),'Backlog');
+ await api(member,path,'POST',{url:saved.url},409);await api(foreign,path,'PATCH',{version:saved.version,completeOnMerge:true},404);
+ let closed=fixture.pull(1,{state:'closed'});assert.equal((await webhook(payload(closed))).status,200);assert.equal(await status(),'Backlog');assert.equal((await link()).state,'Closed');
+ saved=await link();saved=await api(member,path,'PATCH',{version:saved.version,completeOnMerge:true});assert.equal(await status(),'Backlog');
+ assert.equal((await webhook(payload(closed),{signature:'sha256='+'0'.repeat(64)})).status,401);assert.equal((await webhook(null,{body:'invalid json',signature:'sha256='+'0'.repeat(64)})).status,401);assert.equal((await webhook(null,{body:'invalid json'})).status,400);
+ assert.equal((await webhook(null,{body:'x'.repeat(1048577)})).status,413);assert.equal((await webhook({installation:{id:fixture.installationId},repository:{id:fixture.repositoryId},pull_request:{}})).status,400);
+ const merged=fixture.pull(1,{state:'closed',merged:true,merged_at:new Date().toISOString(),base:{ref:'release/fictional',repo:{id:fixture.repositoryId,full_name:fixture.repository}}});const event=payload(merged);const id=randomUUID();
+ assert.equal((await webhook({...event,installation:{id:fixture.installationId+1}})).status,202);assert.equal((await webhook({...event,repository:{id:fixture.repositoryId+1}})).status,202);assert.equal(await status(),'Backlog');
+ const parallel=await Promise.all([webhook(event,{delivery:id}),webhook(event,{delivery:id})]);assert.deepEqual(parallel.map(r=>r.status),[200,200]);assert.equal(await status(),'Done');saved=await link();assert.equal(saved.state,'Merged');assert.equal(saved.baseBranch,'release/fictional');assert.ok(saved.completionAppliedAt);
+ const activity=await api(member,'/api/issues/'+issue.id+'/activity');assert.equal(activity.activity.filter(a=>a.action==='github_completed').length,1);assert.equal(activity.activity.find(a=>a.action==='github_completed').actorName,'GitHub');
+ const notices=await api(member,'/api/notifications');assert.ok(notices.notifications.some(n=>n.issueId===issue.id&&n.actorName==='GitHub'&&n.payload.source==='github'));
+ assert.equal((await webhook({...event,action:'edited'},{delivery:id})).status,409);
+ const reopened=await api(member,'/api/issues/'+issue.id);await api(member,'/api/issues/'+issue.id,'PATCH',{version:reopened.version,status:'Todo'});await webhook(event);assert.equal(await status(),'Todo');
+ const verifiedBeforeDelay=(await link()).lastVerifiedAt;
+ const old=fixture.pull(1,{state:'open',merged:false,merged_at:null,updated_at:new Date(new Date(merged.updated_at).getTime()-1000).toISOString()});await webhook(payload(old));assert.equal((await link()).lastVerifiedAt,verifiedBeforeDelay);assert.equal((await link()).state,'Merged');assert.equal(await status(),'Todo');
+ saved=await link();await api(member,path+'/refresh','POST',{version:saved.version});assert.equal((await link()).state,'Merged');assert.equal(await status(),'Todo');
+ fixture.setMode('stale');saved=await link();await api(member,path+'/refresh','POST',{version:saved.version},503);assert.equal((await connection()).status,'stale');assert.equal((await link()).state,'Merged');
+ const editable=await api(member,'/api/issues/'+issue.id);await api(member,'/api/issues/'+issue.id,'PATCH',{version:editable.version,title:prefix+' ordinary editing still works'});
+ fixture.setMode('ok');saved=await link();await api(member,path+'/refresh','POST',{version:saved.version});assert.equal((await connection()).status,'connected');
+ saved=await link();await api(member,path,'DELETE',{version:saved.version});assert.equal(await link(),null);await webhook(event);assert.equal(await status(),'Todo');
+ saved=await api(member,path,'POST',{url:'https://github.com/'+fixture.repository+'/pull/4'},201);assert.equal(saved.state,'Merged');assert.equal(await status(),'Todo');saved=await api(member,path,'PATCH',{version:saved.version,completeOnMerge:true});assert.equal(await status(),'Done');
+ await api(member,path,'PATCH',{version:saved.version-1,completeOnMerge:false},409);
+ await api(member,path,'DELETE',{version:saved.version});saved=await api(member,path,'POST',{url:'https://github.com/'+fixture.repository+'/pull/2',completeOnMerge:true},201);assert.equal(saved.state,'Draft');
+ const beforeArchive=await api(member,'/api/issues/'+issue.id);await api(member,'/api/issues/'+issue.id,'DELETE',{version:beforeArchive.version});await api(member,path,'PATCH',{version:saved.version,completeOnMerge:false},409);const draftMerged=fixture.pull(2,{state:'closed',draft:false,merged:true,merged_at:new Date().toISOString()});await webhook(payload(draftMerged));assert.equal((await link()).completionAppliedAt,null);
+ const archived=await api(member,'/api/issues/'+issue.id);
+ // Restore uses the existing explicit restore endpoint.
+ await api(member,'/api/issues/'+issue.id+'/restore','POST',{version:archived.version});
+ const conn=(await connection()).connection;await api(admin,configPath,'DELETE',{version:conn.version});assert.equal((await link()).completeOnMerge,false);assert.equal((await connection()).status,'disconnected');await webhook(payload(draftMerged));assert.equal((await link()).completionAppliedAt,null);
+ await api(admin,configPath,'POST',{version:(await connection()).connection.version,shareWithWorkspace:true});assert.equal(await link(),null);
+ saved=await api(member,path,'POST',{url:'https://github.com/'+fixture.repository+'/pull/3',completeOnMerge:true},201);assert.equal(saved.state,'Closed');
+ const revokedPayload={action:'suspend',installation:{id:fixture.installationId}};assert.equal((await webhook(revokedPayload,{event:'installation'})).status,200);assert.equal((await connection()).status,'revoked');assert.equal((await link()).completeOnMerge,false);await api(member,path+'/refresh','POST',{version:(await link()).version},409);
+ await api(admin,configPath,'POST',{version:(await connection()).connection.version,shareWithWorkspace:true});assert.equal(await link(),null);
+ fixture.setMode('revoked');await api(member,path,'POST',{url:'https://github.com/'+fixture.repository+'/pull/1'},409);assert.equal((await connection()).status,'revoked');fixture.setMode('ok');await api(admin,configPath,'POST',{version:(await connection()).connection.version,shareWithWorkspace:true});
+ assert.equal((await webhook({action:'removed',installation:{id:fixture.installationId},repositories_removed:[{id:fixture.repositoryId}]},{event:'installation_repositories'})).status,200);assert.equal((await connection()).status,'revoked');await api(admin,configPath,'POST',{version:(await connection()).connection.version,shareWithWorkspace:true});
+ assert.ok(fixture.stats().authorized>5);console.log(`Controlled GitHub passed: signed App/installation auth, binding/consent, verified PR states, opt-in completion, replay/order/identity, tenant/role/failure/archive/unlink/revocation. Webhook assertions: ${webhookChecks}.`);
+}
