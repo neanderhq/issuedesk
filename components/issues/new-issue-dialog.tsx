@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createIssue, issuePriorities, issueStatuses, type CreatedIssue, type IssueLabelOption, type IssueMember, type IssueMilestone, type IssuePriority, type IssueProject, type IssueRecord, type IssueStatus } from "./issue-api";
+import { requestJson, createIssue, issuePriorities, issueStatuses, type CreatedIssue, type IssueLabelOption, type IssueMember, type IssueMilestone, type IssuePriority, type IssueProject, type IssueRecord, type IssueStatus } from "./issue-api";
+
+import type { IssueTemplate } from "@/components/templates/types";
 
 type NewIssueDialogProps = {
   members: IssueMember[];
@@ -39,6 +41,20 @@ export function NewIssueDialog({ members, projects, milestones, labels, parentIs
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const templateApplyRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const [templates, setTemplates] = useState<IssueTemplate[]>([]);
+  const [templateId, setTemplateId] = useState("");
+  const [templateBusy, setTemplateBusy] = useState(false);
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [appliedValues, setAppliedValues] = useState(() => JSON.stringify({title:"", description:"", priority:"No priority", projectId:"none", labelIds:[]}));
+  const ownedValues = () => JSON.stringify({title:form.title,description:form.description,priority:form.priority,projectId:form.projectId,labelIds:form.labelIds});
+  useEffect(() => { if(open) void requestJson<{templates:IssueTemplate[]}>("/api/issue-templates").then(result=>setTemplates(result.templates)).catch(cause=>setError(cause instanceof Error?cause.message:"Templates unavailable.")); }, [open]);
+  async function applyTemplate() {
+    if(!templateId)return;setTemplateBusy(true);setError("");
+    try {const row=await requestJson<IssueTemplate>(`/api/issue-templates/${templateId}/apply`);const values={title:row.title,description:row.description,priority:row.priority,projectId:row.projectId??"none",labelIds:row.labelIds};setForm(current=>({...current,...values,milestoneId:current.projectId===values.projectId?current.milestoneId:"none"}));setAppliedValues(JSON.stringify(values));setReplaceOpen(false);titleRef.current?.focus();}
+    catch(cause){setError(cause instanceof Error?cause.message:"Template could not be applied.");setReplaceOpen(false);}finally{setTemplateBusy(false);}
+  }
   const availableMilestones = milestones.filter((milestone) => milestone.projectId === form.projectId);
   const availableParents = parentIssues.filter((issue) => !issue.parentIssueId);
 
@@ -63,6 +79,8 @@ export function NewIssueDialog({ members, projects, milestones, labels, parentIs
       onCreated(created);
       setOpen(false);
       setForm(initialForm());
+      setTemplateId("");
+      setAppliedValues(JSON.stringify({title:"",description:"",priority:"No priority",projectId:"none",labelIds:[]}));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The issue could not be created.");
     } finally {
@@ -90,7 +108,13 @@ export function NewIssueDialog({ members, projects, milestones, labels, parentIs
       <form onSubmit={submit} className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="new-issue-title">Title</Label>
-          <Input id="new-issue-title" autoFocus required maxLength={200} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="What needs to be done?" />
+          <Input id="new-issue-title" ref={titleRef} autoFocus required maxLength={200} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="What needs to be done?" />
+        </div>
+        <div className="grid gap-2 rounded-md border p-3">
+          <Label htmlFor="new-issue-template">Issue template</Label>
+          <div className="flex min-w-0 flex-wrap gap-2"><select id="new-issue-template" className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring" value={templateId} onChange={e=>setTemplateId(e.target.value)}><option value="">{templates.length?"Choose a template":"No templates available"}</option>{templates.map(t=><option key={t.id} value={t.id}>{t.name}{t.defaultsError?" (needs repair)":""}</option>)}</select><Button type="button" variant="outline" ref={templateApplyRef} disabled={!templateId||templateBusy} onClick={()=>{if(ownedValues()!==appliedValues)setReplaceOpen(true);else void applyTemplate();}}>{templateBusy?"Applying…":"Apply template"}</Button></div>
+          <p className="text-xs text-muted-foreground">Copy a starting point, then edit your issue freely.</p>
+          {replaceOpen&&<div role="group" aria-label="Replace draft fields" className="grid gap-2 rounded-md border p-3"><p className="text-sm">Replace the title, description, priority, labels and project in this draft? Other fields stay.</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={templateBusy} onClick={()=>{setReplaceOpen(false);templateApplyRef.current?.focus();}}>Keep draft</Button><Button type="button" disabled={templateBusy} onClick={()=>void applyTemplate()}>Replace draft fields</Button></div></div>}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="new-issue-description">Description</Label>

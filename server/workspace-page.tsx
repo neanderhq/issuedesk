@@ -16,6 +16,7 @@ export const workspacePages = [
   "projects",
   "cycles",
   "archive",
+  "templates",
   "settings-members",
   "settings-workspace",
 ] as const;

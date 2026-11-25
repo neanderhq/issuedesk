@@ -385,3 +385,18 @@ export const followerRelations = relations(issueFollowers, ({ one }) => ({
   issue: one(issues, { fields: [issueFollowers.issueId], references: [issues.id] }),
   user: one(user, { fields: [issueFollowers.userId], references: [user.id] }),
 }));
+
+// Defaults deliberately keep deleted references so application can report/repair them.
+export const issueTemplates = pgTable("issue_templates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 120 }).notNull(),
+  title: varchar("title", { length: 200 }).default("").notNull(),
+  description: text("description").default("").notNull(),
+  priority: issuePriority("priority").default("No priority").notNull(),
+  projectId: uuid("project_id"),
+  labelIds: jsonb("label_ids").$type<string[]>().default([]).notNull(),
+  version: integer("version").default(1).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [uniqueIndex("issue_templates_workspace_name_unique").on(table.workspaceId, sql`lower(${table.name})`)]);

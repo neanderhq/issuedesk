@@ -21,7 +21,9 @@
     "test:template": "node scripts/verify-template.mjs",
     "test:policy": "python3 scripts/check_repository.py",
     "verify": "pnpm run check && pnpm run test && pnpm run test:policy && pnpm run build",
-    "test:production": "node scripts/verify-template.mjs"
+    "test:production": "node scripts/verify-template.mjs",
+    "test:features": "node --env-file=.env.local scripts/test-feature-workflows.mjs",
+    "test:feature-ui": "node --env-file=.env.local scripts/test-feature-experience.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.21",

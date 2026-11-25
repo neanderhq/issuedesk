@@ -36,6 +36,13 @@
       "when": 1795590497314,
       "tag": "0004_workspace_cursor_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795602752326,
+      "tag": "0005_issue_templates",
+      "breakpoints": true
     }
   ]
 }

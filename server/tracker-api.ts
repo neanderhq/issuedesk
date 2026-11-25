@@ -1,3 +1,4 @@
+import { issueTemplatesRoute } from "./issue-templates";
 import { and, asc, desc, eq, exists, ilike, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "./db";
@@ -1984,6 +1985,7 @@ async function notificationsRoute(request: Request, access: Access, notification
 export async function trackerApiRoute(request: Request, route: string[]) {
   const access = await accessFor(request);
   if ("response" in access) return access.response;
+  if (route[0] === "issue-templates") return issueTemplatesRoute(request, access, route.slice(1));
   if (route[0] === "notifications" && route.length === 1) return notificationsRoute(request, access);
   if (route[0] === "notifications" && route[1] === "unread-count" && route.length === 2) return notificationsRoute(request, access, undefined, "unread-count");
   if (route[0] === "notifications" && route[1] === "read-all" && route.length === 2) return notificationsRoute(request, access, undefined, "read-all");
