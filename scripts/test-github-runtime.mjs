@@ -22,6 +22,6 @@ try{
  await start(false);const ctx=await request.newContext({baseURL:origin,extraHTTPHeaders:{origin,'x-forwarded-for':'203.0.113.96'}});assert.equal((await ctx.post('/api/auth/sign-in/email',{data:{email:DEMO_EMAIL,password:process.env.DEMO_OWNER_PASSWORD}})).status(),200);const state=await ctx.get('/api/integrations/github');assert.equal(state.status(),200);assert.equal((await state.json()).status,'unconfigured');assert.equal((await ctx.post('/api/integrations/github',{data:{version:0,shareWithWorkspace:true}})).status(),409);await ctx.dispose();await stop();console.log('Unconfigured runtime correctly rejects connection without fabricating success.');
  await start(true);await testFeatureWorkflows(origin,{afterTemplates:context=>testGitHubWorkflows(context,fixture,origin)});
  await testGitHubBrowser(origin,fixture,resolve(dir,'github-ui'));
- await testFeaturePersistence(origin,fixture,async()=>{await stop();await start(true);});
+ const reused=await request.newContext();try{assert.equal((await reused.post(origin+'/api/auth/sign-in/email',{headers:{origin},data:{email:DEMO_EMAIL,password:process.env.DEMO_OWNER_PASSWORD}})).status(),200);await testFeaturePersistence(origin,fixture,async()=>{await stop();await start(true);},reused);}finally{await reused.dispose();}
  console.log('Production native runtime feature checks passed (controlled provider; real GitHub not configured).');
 }finally{await stop();await db.query('DELETE FROM github_connections WHERE installation_id=$1',[fixture.installationId]);await db.end();await fixture.close();}
